@@ -6,6 +6,7 @@ dist/
 *.har
 *.log
 .DS_Store
-docs/
+docs/*
+!docs/security-hardening/
 evals/
 CLAUDE.md
