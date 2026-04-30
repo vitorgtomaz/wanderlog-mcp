@@ -10,9 +10,9 @@ export const getTripUrlInputSchema = {
     .describe("The trip key from wanderlog_list_trips."),
   mode: z
     .enum(["edit", "view", "suggest"])
-    .default("edit")
+    .default("view")
     .describe(
-      "Which link variant to return. 'edit' (default) is the primary link with full permissions. 'view' is a read-only share link. 'suggest' is a suggest-mode share link where collaborators can propose changes.",
+      "Which link variant to return. 'view' (default) is a read-only link that's safe to share. 'edit' is a full-permission link — anyone who has it can edit the trip, so only request it when the user explicitly asks for an editable link. 'suggest' is a suggest-mode share link where collaborators can propose changes.",
     ),
 };
 
@@ -20,11 +20,14 @@ export const getTripUrlDescription = `
 Returns the wanderlog.com URL for a trip so the user can open it in a browser.
 
 Three link variants are available via the mode parameter:
-  - edit    (default) — full-permission link for the owner
-  - view    — read-only link that's safe to share with anyone
+  - view    (default) — read-only link, safe to share with anyone
+  - edit    — full-permission link; anyone with this URL can edit the trip
   - suggest — suggest-mode link where collaborators can propose changes
 
-If you don't know which mode the user wants, default to edit.
+Default to view. Only request mode: "edit" when the user explicitly asks
+for an editable link (e.g. "give me a link I can edit", "send me the edit
+URL"), and warn them that an edit URL grants write access to anyone who
+has it — they should keep it private.
 `.trim();
 
 type Args = {
@@ -52,7 +55,7 @@ export async function getTripUrl(
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   try {
     const trip = await ctx.tripCache.get(args.trip_key);
-    const mode = args.mode ?? "edit";
+    const mode = args.mode ?? "view";
     const url = buildTripUrl(trip, mode, ctx.config.baseUrl);
 
     const suffix =
@@ -60,7 +63,7 @@ export async function getTripUrl(
         ? "\n(Read-only link — safe to share.)"
         : mode === "suggest"
           ? "\n(Suggest-mode link — collaborators can propose changes.)"
-          : "";
+          : "\n(Edit link — anyone with this URL can edit the trip. Keep it private.)";
     return { content: [{ type: "text", text: `${url}${suffix}` }] };
   } catch (err) {
     const msg =
