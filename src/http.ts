@@ -10,6 +10,7 @@ import type { AppContext } from "./context.js";
 import { WanderlogError } from "./errors.js";
 import { buildServer } from "./server.js";
 import { extractCookie } from "./http-auth.js";
+import { redactSecrets } from "./redact.js";
 
 // --- per-user context cache keyed by cookie hash ---
 
@@ -109,7 +110,7 @@ async function main() {
         err instanceof WanderlogError
           ? err.toUserMessage()
           : (err as Error).message;
-      console.error(`[wanderdog] auth failed: ${msg}`);
+      console.error(`[wanderdog] auth failed: ${redactSecrets(msg)}`);
       res.status(403).json({
         jsonrpc: "2.0",
         error: { code: -32000, message: `Authentication failed: ${msg}` },
@@ -127,7 +128,10 @@ async function main() {
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);
     } catch (error) {
-      console.error("[wanderdog] error handling request:", error);
+      console.error(
+        "[wanderdog] error handling request:",
+        redactSecrets((error as Error).message ?? String(error)),
+      );
       if (!res.headersSent) {
         res.status(500).json({
           jsonrpc: "2.0",
@@ -170,6 +174,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(`[wanderdog] fatal: ${(err as Error).stack ?? err}`);
+  const stack = (err as Error).stack ?? String(err);
+  console.error(`[wanderdog] fatal: ${redactSecrets(stack)}`);
   process.exit(1);
 });

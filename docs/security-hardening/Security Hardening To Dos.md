@@ -16,7 +16,7 @@ so early fixes also reduce the surface for later ones (e.g. dropping
 
 - [x] [01 — Drop `?token=` query-param fallback](./01-drop-token-query-param.md) — Data leak
 - [x] [02 — Warn LLM about untrusted trip content](./02-untrusted-content-warning.md) — Prompt injection
-- [ ] [03 — Audit HTTP error logging for cookie leakage](./03-http-error-logging-audit.md) — Data leak
+- [x] [03 — Audit HTTP error logging for cookie leakage](./03-http-error-logging-audit.md) — Data leak
 - [ ] [04 — Wrap third-party trip fields in untrusted-data delimiters](./04-untrusted-data-delimiters.md) — Prompt injection
 
 ### Medium
