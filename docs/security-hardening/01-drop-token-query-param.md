@@ -2,7 +2,7 @@
 
 **Severity:** High
 **Category:** Data leak
-**Status:** Todo
+**Status:** Done ✅
 
 ## Problem
 

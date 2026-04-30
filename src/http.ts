@@ -9,6 +9,7 @@ import { TripCache } from "./cache/trip-cache.js";
 import type { AppContext } from "./context.js";
 import { WanderlogError } from "./errors.js";
 import { buildServer } from "./server.js";
+import { extractCookie } from "./http-auth.js";
 
 // --- per-user context cache keyed by cookie hash ---
 
@@ -77,25 +78,6 @@ async function getOrCreateContext(cookieRaw: string): Promise<AppContext> {
   }
 }
 
-// --- extract cookie from Authorization header or query param ---
-
-function extractCookie(req: { headers: Record<string, string | undefined>; url?: string }): string | null {
-  const auth = req.headers.authorization;
-  if (auth) {
-    const match = auth.match(/^Bearer\s+(.+)$/i);
-    if (match?.[1]) return match[1];
-  }
-
-  // Fall back to ?token= query parameter (for clients without Bearer support)
-  if (req.url) {
-    const url = new URL(req.url, "http://localhost");
-    const token = url.searchParams.get("token");
-    if (token) return token;
-  }
-
-  return null;
-}
-
 // --- HTTP server ---
 
 async function main() {
@@ -112,7 +94,7 @@ async function main() {
         error: {
           code: -32000,
           message:
-            "Missing Authorization header. Set Bearer token to your Wanderlog connect.sid cookie value.",
+            "Missing or malformed Authorization header. Set 'Authorization: Bearer <connect.sid>'. The cookie value must not be passed in the URL.",
         },
         id: null,
       });
