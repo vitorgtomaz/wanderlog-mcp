@@ -7,6 +7,7 @@ import {
   buildPlaceBlock,
   findHotelsSection,
   findTripCenter,
+  quoteForLLM,
   requireUserId,
   submitOp,
 } from "./shared.js";
@@ -61,7 +62,7 @@ export async function addHotel(
     const center = findTripCenter(trip, entry.geos);
     if (!center) {
       throw new WanderlogValidationError(
-        `Cannot add hotel to "${trip.title}" because no location anchor is available`,
+        `Cannot add hotel to ${quoteForLLM(trip.title)} because no location anchor is available`,
         "This trip has no associated geo and no existing places.",
       );
     }
@@ -74,7 +75,7 @@ export async function addHotel(
     });
     if (predictions.length === 0) {
       throw new WanderlogError(
-        `No hotel found matching "${args.hotel}" near ${trip.title}`,
+        `No hotel found matching ${quoteForLLM(args.hotel)} near ${quoteForLLM(trip.title)}`,
         "hotel_not_found",
         "Try a more specific name or check the spelling.",
       );
@@ -119,7 +120,7 @@ export async function addHotel(
 
     await submitOp(ctx, args.trip_key, ops);
 
-    const text = `Added ${detail.name} to "${trip.title}" · check-in ${args.check_in} → check-out ${args.check_out}.`;
+    const text = `Added ${quoteForLLM(detail.name)} to ${quoteForLLM(trip.title)} · check-in ${args.check_in} → check-out ${args.check_out}.`;
     return { content: [{ type: "text", text }] };
   } catch (err) {
     const msg =

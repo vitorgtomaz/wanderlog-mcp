@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { AppContext } from "../context.js";
 import { WanderlogError, WanderlogValidationError } from "../errors.js";
+import { quoteForLLM } from "./shared.js";
 
 export const createTripInputSchema = {
   destination: z
@@ -70,7 +71,7 @@ export async function createTrip(
     const geos = await ctx.rest.geoAutocomplete(args.destination);
     if (geos.length === 0) {
       throw new WanderlogError(
-        `No location found for "${args.destination}"`,
+        `No location found for ${quoteForLLM(args.destination)}`,
         "geo_not_found",
         "Try a more specific or well-known place name.",
       );

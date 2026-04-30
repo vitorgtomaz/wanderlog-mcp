@@ -3,7 +3,7 @@ import type { AppContext } from "../context.js";
 import { WanderlogError, WanderlogValidationError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
 import type { Section, TripPlan } from "../types.js";
-import { generateBlockId, submitOp } from "./shared.js";
+import { generateBlockId, quoteForLLM, submitOp } from "./shared.js";
 
 export const updateTripDatesInputSchema = {
   trip_key: z.string().min(1).describe("The trip to update."),
@@ -174,7 +174,7 @@ export function buildUpdateDatesOps(
         .map((r) => `  ${r.date}: ${r.section.blocks.length} block(s)`)
         .join("\n");
       throw new WanderlogValidationError(
-        `Shortening "${trip.title}" (${trip.startDate} → ${trip.endDate}) to ${newStartDate} → ${newEndDate} would delete content from ${nonEmpty.length} day(s):\n${lines}`,
+        `Shortening ${quoteForLLM(trip.title)} (${trip.startDate} → ${trip.endDate}) to ${newStartDate} → ${newEndDate} would delete content from ${nonEmpty.length} day(s):\n${lines}`,
         {
           hint: "Pass force: true to delete anyway, or move the content to other days first.",
           followUps: [
@@ -259,7 +259,7 @@ export async function updateTripDates(
         content: [
           {
             type: "text",
-            text: `"${trip.title}" already has dates ${args.start_date} → ${args.end_date}. No changes made.`,
+            text: `${quoteForLLM(trip.title)} already has dates ${args.start_date} → ${args.end_date}. No changes made.`,
           },
         ],
       };
@@ -268,7 +268,9 @@ export async function updateTripDates(
     await submitOp(ctx, args.trip_key, ops);
 
     const diff = diffDays(trip, args.start_date, args.end_date);
-    const summary: string[] = [`Updated "${trip.title}" to ${args.start_date} → ${args.end_date}.`];
+    const summary: string[] = [
+      `Updated ${quoteForLLM(trip.title)} to ${args.start_date} → ${args.end_date}.`,
+    ];
     if (diff.toAdd.length > 0) {
       summary.push(`  Added ${diff.toAdd.length} day(s): ${diff.toAdd.join(", ")}`);
     }

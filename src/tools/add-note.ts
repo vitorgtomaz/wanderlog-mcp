@@ -5,6 +5,7 @@ import type { Json0Op } from "../ot/apply.js";
 import {
   buildNoteBlock,
   findTargetSection,
+  quoteForLLM,
   requireUserId,
   submitOp,
 } from "./shared.js";
@@ -77,7 +78,7 @@ export async function addNote(
     await submitOp(ctx, args.trip_key, textOps);
 
     const preview = args.text.length > 60 ? `${args.text.slice(0, 57)}…` : args.text;
-    const text = `Added note "${preview}" to ${target.label} in "${trip.title}".`;
+    const text = `Added note ${quoteForLLM(preview)} to ${target.label} in ${quoteForLLM(trip.title)}.`;
     return { content: [{ type: "text", text }] };
   } catch (err) {
     const msg =

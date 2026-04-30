@@ -5,6 +5,7 @@ import type { Json0Op } from "../ot/apply.js";
 import {
   buildChecklistBlock,
   findTargetSection,
+  quoteForLLM,
   requireUserId,
   submitOp,
 } from "./shared.js";
@@ -71,8 +72,8 @@ export async function addChecklist(
 
     await submitOp(ctx, args.trip_key, ops);
 
-    const titlePart = args.title ? `"${args.title}" ` : "";
-    const text = `Added checklist ${titlePart}(${args.items.length} items) to ${target.label} in "${trip.title}".`;
+    const titlePart = args.title ? `${quoteForLLM(args.title)} ` : "";
+    const text = `Added checklist ${titlePart}(${args.items.length} items) to ${target.label} in ${quoteForLLM(trip.title)}.`;
     return { content: [{ type: "text", text }] };
   } catch (err) {
     const msg =

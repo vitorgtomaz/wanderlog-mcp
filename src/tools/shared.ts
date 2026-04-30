@@ -67,6 +67,22 @@ export async function submitOp(
   });
 }
 
+/**
+ * Wrap a user-supplied or trip-derived string in double quotes so the
+ * model sees a clear visual boundary between the framing and the data
+ * the tool is echoing back. Escapes embedded double quotes so a hostile
+ * field can't terminate the wrapper. Truncation is the caller's job —
+ * pass a previously-sliced string if you want a short echo.
+ *
+ * Pairs with the `<untrusted>` delimiters on read paths from item #04:
+ * reads use structured delimiters because the field is rendered alone;
+ * writes use quotes because the framing sentence is mostly trusted with
+ * one user-controlled hole. See docs/security-hardening/09-quote-echoed-input.md.
+ */
+export function quoteForLLM(s: string): string {
+  return `"${s.replace(/"/g, '\\"')}"`;
+}
+
 /** Wanderlog block IDs are 9-digit numeric. */
 export function generateBlockId(): number {
   return Math.floor(Math.random() * 1_000_000_000);

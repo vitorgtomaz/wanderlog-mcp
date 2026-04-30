@@ -4,7 +4,12 @@ import { WanderlogError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
 import { resolvePlaceRef } from "../resolvers/place-ref.js";
 import { isPlaceBlock } from "../types.js";
-import { generateBlockId, requireUserId, submitOp } from "./shared.js";
+import {
+  generateBlockId,
+  quoteForLLM,
+  requireUserId,
+  submitOp,
+} from "./shared.js";
 
 export const addExpenseInputSchema = {
   trip_key: z
@@ -89,21 +94,21 @@ export async function addExpense(
     const result = resolvePlaceRef(trip, args.place);
     if (result.kind === "ambiguous") {
       const lines = result.candidates.map((c, i) => {
-        const name = isPlaceBlock(c.block) ? c.block.place.name : `block #${c.block.id}`;
+        const name = isPlaceBlock(c.block) ? quoteForLLM(c.block.place.name) : `block #${c.block.id}`;
         const loc = c.section.date ? `day ${c.section.date}` : c.section.heading || "unscheduled";
         return `  ${i + 1}. ${name} (${loc})`;
       });
-      const text = `Multiple places match "${args.place}":\n${lines.join("\n")}\n\nRetry with a more specific reference.`;
+      const text = `Multiple places match ${quoteForLLM(args.place)}:\n${lines.join("\n")}\n\nRetry with a more specific reference.`;
       return { content: [{ type: "text", text }] };
     }
     if (result.kind === "none") {
       throw new WanderlogError(
-        `No place matching "${args.place}" found in "${trip.title}"`,
+        `No place matching ${quoteForLLM(args.place)} found in ${quoteForLLM(trip.title)}`,
         "place_ref_not_found",
         {
           hint: "Add the place to the trip first with wanderlog_add_place, then add the expense.",
           followUps: [
-            `Call wanderlog_get_trip with trip_key "${args.trip_key}" to see existing places.`,
+            `Call wanderlog_get_trip with trip_key ${quoteForLLM(args.trip_key)} to see existing places.`,
           ],
         },
       );
@@ -147,7 +152,7 @@ export async function addExpense(
     await submitOp(ctx, args.trip_key, ops);
 
     const currencyLabel = args.currency.toUpperCase();
-    const text = `Added expense: ${currencyLabel} ${args.amount} for "${args.description}" (linked to ${args.place}) in "${trip.title}".`;
+    const text = `Added expense: ${currencyLabel} ${args.amount} for ${quoteForLLM(args.description)} (linked to ${quoteForLLM(args.place)}) in ${quoteForLLM(trip.title)}.`;
     return { content: [{ type: "text", text }] };
   } catch (err) {
     const msg =

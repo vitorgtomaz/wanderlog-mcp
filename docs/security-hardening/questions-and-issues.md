@@ -57,6 +57,35 @@ that the user may want to review, override, or follow up on.
 - **How to revisit:** `src/formatters/trip-summary.ts` `formatPlaceBlock`
   (the parts after `parts.push(\`${time}…\`)`).
 
+## Item #09 — Extended scope to 3 tool files the spec missed
+
+- **Decision:** The spec listed 8 tool files. While auditing I found
+  the same `"${args.X}"` / `"${trip.title}"` raw-interpolation pattern
+  in `src/tools/create-trip.ts`, `src/tools/search-places.ts`, and
+  `src/tools/update-trip-dates.ts`. Wrapped those too, and the
+  `tests/unit/echo-quoting.test.ts` regression fence covers all 11.
+- **Why:** Same vulnerability, same fix, no marginal risk. Skipping
+  them would leave a ~30% hole in the surface that the spec was meant
+  to cover.
+- **How to revisit:** `tests/unit/echo-quoting.test.ts` (`TOOL_FILES`
+  array) — drop entries to shrink scope.
+
+## Item #09 — Tests are a source-grep, not a per-tool harness
+
+- **Decision:** Rather than mock ShareDB + REST and call each tool with
+  an adversarial argument, `tests/unit/echo-quoting.test.ts`
+  source-greps every affected tool file for (a) the `quoteForLLM`
+  import and (b) the absence of raw `"${args.…}"` /
+  `"${trip.title}"` / `"${preview}"` interpolations. Plus a focused
+  unit test of the helper's escape behaviour.
+- **Why:** The grep fence catches the exact regression we care about
+  (a future patch reintroducing a raw interpolation) without booting
+  a per-tool harness for each of 11 tools. A full per-tool integration
+  test belongs in `tests/integration/`, not unit.
+- **How to revisit:** `tests/unit/echo-quoting.test.ts`. If you want
+  per-tool integration coverage, mirror the pattern in
+  `tests/integration/mutations.test.ts`.
+
 ## Item #08 — HTTP suite is a structural source-grep, not a server boot
 
 - **Decision:** `tests/unit/secret-leak-http.test.ts` does not boot

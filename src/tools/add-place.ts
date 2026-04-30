@@ -9,6 +9,7 @@ import {
   findDaySectionByDate,
   findPlacesToVisitSection,
   findTripCenter,
+  quoteForLLM,
   requireUserId,
   submitOp,
 } from "./shared.js";
@@ -110,7 +111,7 @@ export async function addPlace(
     const center = findTripCenter(trip, entry.geos);
     if (!center) {
       throw new WanderlogValidationError(
-        `Cannot add places to "${trip.title}" because no location anchor is available`,
+        `Cannot add places to ${quoteForLLM(trip.title)} because no location anchor is available`,
         "This trip has no associated geo and no existing places. Add a place via the Wanderlog UI first.",
       );
     }
@@ -122,12 +123,12 @@ export async function addPlace(
     });
     if (predictions.length === 0) {
       throw new WanderlogError(
-        `No place found matching "${args.place}" near ${trip.title}`,
+        `No place found matching ${quoteForLLM(args.place)} near ${quoteForLLM(trip.title)}`,
         "place_not_found",
         {
           hint: "Try a more specific name, or widen the search with wanderlog_search_places first.",
           followUps: [
-            `Call wanderlog_search_places with trip_key "${args.trip_key}" and a broader query to see nearby candidates.`,
+            `Call wanderlog_search_places with trip_key ${quoteForLLM(args.trip_key)} and a broader query to see nearby candidates.`,
             "Retry wanderlog_add_place with a more specific place name (include the city or neighborhood).",
           ],
         },
@@ -180,13 +181,15 @@ export async function addPlace(
       await submitOp(ctx, args.trip_key, timeOps);
     }
 
-    const parts = [`Added ${detail.name} to ${targetLabel} in "${trip.title}".`];
+    const parts = [
+      `Added ${quoteForLLM(detail.name)} to ${targetLabel} in ${quoteForLLM(trip.title)}.`,
+    ];
     if (args.start_time) {
       parts.push(`Scheduled: ${args.start_time}${args.end_time ? `–${args.end_time}` : ""}.`);
     }
     if (args.note) {
       const preview = args.note.length > 60 ? `${args.note.slice(0, 57)}…` : args.note;
-      parts.push(`Note: "${preview}"`);
+      parts.push(`Note: ${quoteForLLM(preview)}`);
     }
     const text = parts.join(" ");
     return { content: [{ type: "text", text }] };

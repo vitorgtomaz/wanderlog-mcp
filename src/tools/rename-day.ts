@@ -3,7 +3,7 @@ import type { AppContext } from "../context.js";
 import { WanderlogError, WanderlogValidationError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
 import { resolveDay } from "../resolvers/day.js";
-import { findDaySectionByDate, submitOp } from "./shared.js";
+import { findDaySectionByDate, quoteForLLM, submitOp } from "./shared.js";
 
 export const renameDayInputSchema = {
   trip_key: z.string().min(1).describe("The trip containing the day to rename."),
@@ -57,7 +57,7 @@ export async function renameDay(
         content: [
           {
             type: "text",
-            text: `Day ${daySection.date} heading is already "${newHeading}" — no change made.`,
+            text: `Day ${daySection.date} heading is already ${quoteForLLM(newHeading)} — no change made.`,
           },
         ],
       };
@@ -73,9 +73,9 @@ export async function renameDay(
 
     await submitOp(ctx, args.trip_key, ops);
 
-    const oldLabel = oldHeading || "(auto-generated)";
-    const newLabel = newHeading || "(auto-generated)";
-    const text = `Renamed day ${daySection.date} in "${trip.title}": "${oldLabel}" → "${newLabel}"`;
+    const oldLabel = oldHeading ? quoteForLLM(oldHeading) : "(auto-generated)";
+    const newLabel = newHeading ? quoteForLLM(newHeading) : "(auto-generated)";
+    const text = `Renamed day ${daySection.date} in ${quoteForLLM(trip.title)}: ${oldLabel} → ${newLabel}`;
     return { content: [{ type: "text", text }] };
   } catch (err) {
     const msg =

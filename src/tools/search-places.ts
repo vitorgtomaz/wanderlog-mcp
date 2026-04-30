@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { AppContext } from "../context.js";
 import { WanderlogError, WanderlogValidationError } from "../errors.js";
 import type { PlaceSuggestion } from "../types.js";
-import { findTripCenter } from "./shared.js";
+import { findTripCenter, quoteForLLM } from "./shared.js";
 
 export const searchPlacesInputSchema = {
   trip_key: z
@@ -70,7 +70,7 @@ export async function searchPlaces(
         content: [
           {
             type: "text",
-            text: `No results for "${args.query}" near ${trip.title}. Try broadening the query.`,
+            text: `No results for ${quoteForLLM(args.query)} near ${quoteForLLM(trip.title)}. Try broadening the query.`,
           },
         ],
       };

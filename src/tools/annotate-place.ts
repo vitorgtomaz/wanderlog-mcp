@@ -4,7 +4,7 @@ import { WanderlogError, WanderlogValidationError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
 import { resolvePlaceRef } from "../resolvers/place-ref.js";
 import { isPlaceBlock } from "../types.js";
-import { submitOp } from "./shared.js";
+import { quoteForLLM, submitOp } from "./shared.js";
 
 export const annotatePlaceInputSchema = {
   trip_key: z
@@ -69,23 +69,23 @@ export async function annotatePlace(
     const result = resolvePlaceRef(trip, args.place);
     if (result.kind === "none") {
       throw new WanderlogError(
-        `No place matching "${args.place}" found in "${trip.title}"`,
+        `No place matching ${quoteForLLM(args.place)} found in ${quoteForLLM(trip.title)}`,
         "place_ref_not_found",
         {
           hint: "Check the place name or use wanderlog_get_trip to see what's in the itinerary.",
           followUps: [
-            `Call wanderlog_get_trip with trip_key "${args.trip_key}" to see all places.`,
+            `Call wanderlog_get_trip with trip_key ${quoteForLLM(args.trip_key)} to see all places.`,
           ],
         },
       );
     }
     if (result.kind === "ambiguous") {
       const lines = result.candidates.map((c, i) => {
-        const name = isPlaceBlock(c.block) ? c.block.place.name : `block #${c.block.id}`;
+        const name = isPlaceBlock(c.block) ? quoteForLLM(c.block.place.name) : `block #${c.block.id}`;
         const loc = c.section.date ? `day ${c.section.date}` : c.section.heading || "unscheduled";
         return `  ${i + 1}. ${name} (${loc})`;
       });
-      const text = `Multiple places match "${args.place}":\n${lines.join("\n")}\n\nRetry with a more specific reference or an ordinal prefix (e.g. "1st ${args.place}").`;
+      const text = `Multiple places match ${quoteForLLM(args.place)}:\n${lines.join("\n")}\n\nRetry with a more specific reference or an ordinal prefix (e.g. ${quoteForLLM(`1st ${args.place}`)}).`;
       return { content: [{ type: "text", text }] };
     }
 
@@ -122,13 +122,13 @@ export async function annotatePlace(
       await submitOp(ctx, args.trip_key, timeOps);
     }
 
-    const parts = [`Updated ${placeName} in "${trip.title}".`];
+    const parts = [`Updated ${quoteForLLM(placeName)} in ${quoteForLLM(trip.title)}.`];
     if (args.start_time) {
       parts.push(`Time: ${args.start_time}${args.end_time ? `–${args.end_time}` : ""}.`);
     }
     if (args.note) {
       const preview = args.note.length > 60 ? `${args.note.slice(0, 57)}…` : args.note;
-      parts.push(`Note: "${preview}"`);
+      parts.push(`Note: ${quoteForLLM(preview)}`);
     }
     return { content: [{ type: "text", text: parts.join(" ") }] };
   } catch (err) {

@@ -4,7 +4,7 @@ import { WanderlogError, WanderlogNotFoundError } from "../errors.js";
 import type { Json0Op } from "../ot/apply.js";
 import { resolvePlaceRef } from "../resolvers/place-ref.js";
 import { isPlaceBlock } from "../types.js";
-import { submitOp } from "./shared.js";
+import { quoteForLLM, submitOp } from "./shared.js";
 
 export const removePlaceInputSchema = {
   trip_key: z.string().min(1).describe("The trip to remove from."),
@@ -54,7 +54,7 @@ export async function removePlace(
         .slice(0, 10)
         .map((c, i) => {
           const name = isPlaceBlock(c.block)
-            ? c.block.place.name
+            ? quoteForLLM(c.block.place.name)
             : `${c.block.type} block`;
           const where = formatLocation(c.section);
           const ordinal = ordinalLabel(i + 1);
@@ -71,7 +71,7 @@ export async function removePlace(
         content: [
           {
             type: "text",
-            text: `"${args.place_ref}" matches ${result.candidates.length} places:\n${lines}\n\n${retryHint}`,
+            text: `${quoteForLLM(args.place_ref)} matches ${result.candidates.length} places:\n${lines}\n\n${retryHint}`,
           },
         ],
         isError: true,
@@ -89,9 +89,9 @@ export async function removePlace(
     await submitOp(ctx, args.trip_key, ops);
 
     const removedName = isPlaceBlock(block)
-      ? block.place.name
+      ? quoteForLLM(block.place.name)
       : `${block.type} block`;
-    const text = `Removed ${removedName} from ${formatLocation(section)} in "${trip.title}".`;
+    const text = `Removed ${removedName} from ${formatLocation(section)} in ${quoteForLLM(trip.title)}.`;
     return { content: [{ type: "text", text }] };
   } catch (err) {
     const msg =
@@ -111,8 +111,8 @@ function formatLocation(section: {
   if (section.mode === "dayPlan" && section.date) {
     return `day ${section.date}`;
   }
-  if (section.heading) return `"${section.heading}"`;
-  return `"${section.type ?? "section"}"`;
+  if (section.heading) return quoteForLLM(section.heading);
+  return quoteForLLM(section.type ?? "section");
 }
 
 function ordinalLabel(n: number): string {
