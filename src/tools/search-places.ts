@@ -21,7 +21,7 @@ export const searchPlacesInputSchema = {
     .enum(["concise", "detailed"])
     .default("concise")
     .describe(
-      "Output verbosity. 'concise' lists name + description only; 'detailed' adds the Google place_id needed for downstream tool calls.",
+      "Output verbosity. 'concise' lists name + description; 'detailed' is reserved for future expansion and currently returns the same shape.",
     ),
 };
 
@@ -32,8 +32,9 @@ destination of a Wanderlog trip. Returns candidate results with names and short 
 Use this to resolve user requests like "find a good coffee shop in Queenstown" into specific
 place candidates. Results are geographically biased toward the trip's location, not global.
 
-If the user wants to *add* a place to a trip, call this first with concise format to present
-options, then call again with detailed format to get place_ids for downstream actions.
+To add a result to the trip, call wanderlog_add_place with the place name from the results
+list — the add tool re-resolves the name against Google Places, so you do not need to thread
+any opaque identifier through the tool chain.
 `.trim();
 
 type Args = {
@@ -87,25 +88,23 @@ export async function searchPlaces(
   }
 }
 
-function formatPredictions(
+// Exported for unit testing. The `format` argument is currently a no-op
+// — concise and detailed produce the same shape. Item #10 dropped the
+// raw `place_id` from the detailed output (CLAUDE.md invariant #2: no
+// raw IDs to the LLM by default), and at the time of writing the
+// detailed branch had no other distinguishing content. The argument is
+// kept so a future expansion of detailed (e.g. Google place types) does
+// not break the tool surface.
+export function formatPredictions(
   predictions: PlaceSuggestion[],
-  format: "concise" | "detailed",
+  _format: "concise" | "detailed",
 ): string {
   const top = predictions.slice(0, 8);
-  if (format === "concise") {
-    return top
-      .map((p, i) => {
-        const main = p.structured_formatting?.main_text ?? p.description;
-        const sub = p.structured_formatting?.secondary_text ?? "";
-        return `${i + 1}. ${main}${sub ? ` — ${sub}` : ""}`;
-      })
-      .join("\n");
-  }
   return top
     .map((p, i) => {
       const main = p.structured_formatting?.main_text ?? p.description;
       const sub = p.structured_formatting?.secondary_text ?? "";
-      return `${i + 1}. ${main}${sub ? ` — ${sub}` : ""}\n   place_id: ${p.place_id}`;
+      return `${i + 1}. ${main}${sub ? ` — ${sub}` : ""}`;
     })
     .join("\n");
 }

@@ -57,6 +57,24 @@ that the user may want to review, override, or follow up on.
 - **How to revisit:** `src/formatters/trip-summary.ts` `formatPlaceBlock`
   (the parts after `parts.push(\`${time}…\`)`).
 
+## Item #10 — `detailed` format kept as a no-op alias for `concise`
+
+- **Decision:** Dropped the `place_id` line from the `detailed` branch
+  of `formatPredictions`. With nothing else distinguishing it, the
+  branch was identical to `concise`, so I collapsed the two into one
+  function body. The `response_format` arg is kept for back-compat —
+  any caller passing `response_format: "detailed"` now silently gets
+  the same shape.
+- **Why:** Removing the option entirely is a breaking change to the
+  tool surface. Keeping the option and having it be a no-op is the
+  smallest, least-disruptive fix. The schema description and
+  `searchPlacesDescription` were updated to stop advertising
+  `detailed` as the way to get place IDs (which it no longer does).
+- **How to revisit:** `src/tools/search-places.ts` (`formatPredictions`)
+  — restore a real distinction by adding e.g. `p.types` to the
+  detailed output if a future use case calls for it. The `_format`
+  parameter is already plumbed through.
+
 ## Item #09 — Extended scope to 3 tool files the spec missed
 
 - **Decision:** The spec listed 8 tool files. While auditing I found
