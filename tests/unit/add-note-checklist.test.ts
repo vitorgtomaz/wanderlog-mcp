@@ -242,9 +242,12 @@ describe("formatBlockLine – checklist", () => {
     };
     const result = formatBlockLine(block, "concise")!;
     expect(result).toContain("☑");
-    expect(result).toContain("Packing list");
-    expect(result).toContain("[x] passport");
-    expect(result).toContain("[ ] adapter");
+    // Title and item text are user-controlled, so they're wrapped in
+    // <untrusted>…</untrusted> by item #04. Asserting on the wrapped form
+    // also keeps this test honest as a regression fence for that wrap.
+    expect(result).toContain("<untrusted>Packing list</untrusted>");
+    expect(result).toContain("[x] <untrusted>passport</untrusted>");
+    expect(result).toContain("[ ] <untrusted>adapter</untrusted>");
     expect(result).toContain("[1/2]");
   });
 
@@ -259,10 +262,10 @@ describe("formatBlockLine – checklist", () => {
       ],
     };
     const result = formatBlockLine(block, "detailed")!;
-    expect(result).toContain("☑ Tasks:");
+    expect(result).toContain("☑ <untrusted>Tasks</untrusted>:");
     expect(result).toContain("[1/2]");
-    expect(result).toContain("[ ] book flights");
-    expect(result).toContain("[x] reserve hotel");
+    expect(result).toContain("[ ] <untrusted>book flights</untrusted>");
+    expect(result).toContain("[x] <untrusted>reserve hotel</untrusted>");
   });
 
   it("returns null for empty untitled checklist", () => {

@@ -26,7 +26,7 @@ export function formatTripList(
         const dates =
           t.startDate && t.endDate ? ` · ${t.startDate} → ${t.endDate}` : "";
         const places = t.placeCount != null ? ` · ${t.placeCount} places` : "";
-        return `• ${t.title}${dates}${places} [key: ${t.key}]`;
+        return `• ${untrust(t.title)}${dates}${places} [key: ${t.key}]`;
       })
       .join("\n");
   }
@@ -34,12 +34,12 @@ export function formatTripList(
   return trips
     .map((t) => {
       const lines = [
-        `Title:    ${t.title}`,
+        `Title:    ${untrust(t.title)}`,
         `Key:      ${t.key}`,
         `Dates:    ${t.startDate ?? "?"} → ${t.endDate ?? "?"}`,
         `Places:   ${t.placeCount ?? 0}`,
       ];
-      if (t.user) lines.push(`Owner:    ${t.user.username}`);
+      if (t.user) lines.push(`Owner:    ${untrust(t.user.username)}`);
       if (t.editedAt) lines.push(`Edited:   ${t.editedAt}`);
       return lines.join("\n");
     })
@@ -70,7 +70,8 @@ function renderSection(section: Section, format: ResponseFormat): string | null 
   if (!section.blocks || section.blocks.length === 0) return null;
 
   const icon = sectionIcon(section);
-  const heading = section.heading?.trim() || sectionDefaultHeading(section);
+  const userHeading = section.heading?.trim();
+  const heading = userHeading ? untrust(userHeading) : sectionDefaultHeading(section);
   const lines = section.blocks
     .map((b) => formatBlockLine(b, format))
     .filter(Boolean) as string[];
@@ -119,11 +120,11 @@ function sectionDefaultHeading(section: Section): string {
 
 function formatTripHeader(trip: TripPlan, format: ResponseFormat): string {
   const dates = `${trip.startDate} → ${trip.endDate}`;
-  const base = `${trip.title} · ${dates} · ${trip.days} days · ${trip.placeCount} places`;
+  const base = `${untrust(trip.title)} · ${dates} · ${trip.days} days · ${trip.placeCount} places`;
   if (format === "concise") return base;
 
   const extras: string[] = [base, `Key: ${trip.key}`, `Privacy: ${trip.privacy}`];
-  const contributorNames = trip.contributors?.map((c) => c.username).join(", ");
+  const contributorNames = trip.contributors?.map((c) => untrust(c.username)).join(", ");
   if (contributorNames) extras.push(`Contributors: ${contributorNames}`);
   return extras.join("\n");
 }
@@ -134,7 +135,7 @@ function formatDay(
   format: ResponseFormat,
 ): string {
   const label = formatDayLabel(section);
-  const header = `${trip.title} — ${label}`;
+  const header = `${untrust(trip.title)} — ${label}`;
   if (section.blocks.length === 0) {
     return `${header}\n(no plans for this day yet)`;
   }
@@ -186,12 +187,12 @@ function formatPlaceBlock(block: PlaceBlock, format: ResponseFormat): string | n
       ? ` (check-in ${block.hotel.checkIn}, out ${block.hotel.checkOut})`
       : "";
     const note = hasNote
-      ? `\n    📝 ${inlineNote.length > 120 ? `${inlineNote.slice(0, 117)}…` : inlineNote}`
+      ? `\n    📝 ${untrust(inlineNote.length > 120 ? `${inlineNote.slice(0, 117)}…` : inlineNote)}`
       : "";
-    return `${time}${p.name}${rating}${hotel}${note}`;
+    return `${time}${untrust(p.name)}${rating}${hotel}${note}`;
   }
 
-  const parts = [`${time}${p.name}`];
+  const parts = [`${time}${untrust(p.name)}`];
   if (p.rating) parts.push(`★${p.rating} (${p.user_ratings_total ?? 0} reviews)`);
   if (p.types?.length) parts.push(`[${p.types.slice(0, 3).join(", ")}]`);
   if (p.formatted_address) parts.push(p.formatted_address);
@@ -199,10 +200,10 @@ function formatPlaceBlock(block: PlaceBlock, format: ResponseFormat): string | n
   if (block.hotel?.checkIn)
     parts.push(`check-in ${block.hotel.checkIn} → check-out ${block.hotel.checkOut}`);
   if (block.hotel?.confirmationNumber)
-    parts.push(`conf. ${block.hotel.confirmationNumber}`);
+    parts.push(`conf. ${untrust(block.hotel.confirmationNumber)}`);
   if (hasNote) {
     const truncated = inlineNote.length > 200 ? `${inlineNote.slice(0, 197)}…` : inlineNote;
-    parts.push(`📝 ${truncated}`);
+    parts.push(`📝 ${untrust(truncated)}`);
   }
   return parts.join(" · ");
 }
@@ -212,14 +213,14 @@ function formatNoteBlock(block: NoteBlock): string | null {
   if (!text) return null;
   const oneLine = text.replace(/\s+/g, " ").trim();
   const truncated = oneLine.length > 200 ? `${oneLine.slice(0, 197)}…` : oneLine;
-  return `📝 ${truncated}`;
+  return `📝 ${untrust(truncated)}`;
 }
 
 function formatChecklistBlock(block: ChecklistBlock, format: ResponseFormat): string | null {
   const items = block.items ?? [];
   if (items.length === 0 && !block.title) return null;
 
-  const titlePrefix = block.title ? `${block.title}: ` : "";
+  const titlePrefix = block.title ? `${untrust(block.title)}: ` : "";
 
   if (format === "concise") {
     const checked = items.filter((i) => i.checked).length;
@@ -228,7 +229,7 @@ function formatChecklistBlock(block: ChecklistBlock, format: ResponseFormat): st
       .map((i) => {
         const mark = i.checked ? "[x]" : "[ ]";
         const text = quillToPlain(i.text).replace(/\s+/g, " ").trim();
-        return `${mark} ${text || "(empty)"}`;
+        return `${mark} ${text ? untrust(text) : "(empty)"}`;
       });
     const suffix = items.length > 5 ? ` (+${items.length - 5} more)` : "";
     const progress = items.length > 0 ? ` [${checked}/${items.length}]` : "";
@@ -238,7 +239,7 @@ function formatChecklistBlock(block: ChecklistBlock, format: ResponseFormat): st
   const lines = items.map((i) => {
     const mark = i.checked ? "[x]" : "[ ]";
     const text = quillToPlain(i.text).replace(/\s+/g, " ").trim();
-    return `  ${mark} ${text || "(empty)"}`;
+    return `  ${mark} ${text ? untrust(text) : "(empty)"}`;
   });
   const checked = items.filter((i) => i.checked).length;
   const progress = items.length > 0 ? ` [${checked}/${items.length}]` : "";
@@ -263,8 +264,9 @@ function formatFlightBlock(block: FlightBlock, format: ResponseFormat): string {
     `${from} → ${to}`,
     `${departDate}${departTime} → ${block.arrive?.date ?? ""}${block.arrive?.time ? ` ${block.arrive.time}` : ""}`,
   ];
-  if (block.confirmationNumber) parts.push(`conf. ${block.confirmationNumber}`);
-  if (block.travelerNames?.length) parts.push(`pax: ${block.travelerNames.join(", ")}`);
+  if (block.confirmationNumber) parts.push(`conf. ${untrust(block.confirmationNumber)}`);
+  if (block.travelerNames?.length)
+    parts.push(`pax: ${block.travelerNames.map(untrust).join(", ")}`);
   return parts.join(" · ");
 }
 
@@ -283,7 +285,7 @@ function formatTrainBlock(block: TrainBlock, format: ResponseFormat): string {
     `${from} → ${to}`,
     `${departDate}${departTime} → ${block.arrive?.date ?? ""}${block.arrive?.time ? ` ${block.arrive.time}` : ""}`,
   ];
-  if (block.confirmationNumber) parts.push(`conf. ${block.confirmationNumber}`);
+  if (block.confirmationNumber) parts.push(`conf. ${untrust(block.confirmationNumber)}`);
   return parts.join(" · ");
 }
 
@@ -323,7 +325,17 @@ function formatDayLabel(section: Section): string {
     day: "numeric",
     timeZone: "UTC",
   });
-  return section.heading?.trim()
-    ? `${weekday} ${monthDay} — ${section.heading.trim()}`
+  const heading = section.heading?.trim();
+  return heading
+    ? `${weekday} ${monthDay} — ${untrust(heading)}`
     : `${weekday} ${monthDay}`;
+}
+
+// Wrap a user-controlled string in an untrusted-data delimiter so the LLM
+// has a structural cue that the content is data, not instructions. The
+// inner replacement neutralises an attacker placing `</untrusted>` (or the
+// opening tag) in their own field to break out of the wrapper.
+// See docs/security-hardening/04-untrusted-data-delimiters.md.
+export function untrust(s: string): string {
+  return `<untrusted>${s.replace(/<\/?untrusted>/gi, "")}</untrusted>`;
 }

@@ -11,12 +11,18 @@ import { buildLargeTrip } from "../fixtures/large-trip.ts";
  *
  * These aren't just measurements — they're a regression fence. A change to
  * the formatter that bloats concise `get_trip` on a ~134-place trip past
- * 2k tokens is something we want to notice immediately.
+ * the budget is something we want to notice immediately.
+ *
+ * Item #04 added `<untrusted>…</untrusted>` delimiters around every echo of
+ * a user-controlled field. That's a fixed +23 chars per wrap × ~140 wraps
+ * on a 134-place trip = ~800 extra tokens. The concise budget was bumped
+ * from 2000 → 2500 to absorb that one-time cost while still catching gross
+ * regressions (anything beyond ~2x the original size).
  */
 const CHARS_PER_TOKEN = 4;
 
 const BUDGETS = {
-  getTripConcise: { tokens: 2000, trip: { places: 134, days: 14 } },
+  getTripConcise: { tokens: 2500, trip: { places: 134, days: 14 } },
   getTripDetailed: { tokens: 8000, trip: { places: 134, days: 14 } },
   getTripConciseSmall: { tokens: 500, trip: { places: 20, days: 5 } },
   listTripsConcise: { tokensPerTrip: 40, tripCount: 50 },
