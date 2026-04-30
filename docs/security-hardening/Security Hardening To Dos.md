@@ -23,7 +23,7 @@ so early fixes also reduce the surface for later ones (e.g. dropping
 
 - [x] [05 — Default `wanderlog_get_trip_url` to `view` mode](./05-trip-url-default-view.md) — Data leak
 - [x] [06 — Tell LLM not to volunteer PII unprompted](./06-pii-volunteering-instruction.md) — Data leak
-- [ ] [07 — Update README "Security" section for HTTP relay model](./07-readme-http-relay-security.md) — Data leak
+- [x] [07 — Update README "Security" section for HTTP relay model](./07-readme-http-relay-security.md) — Data leak
 
 ### Low
 

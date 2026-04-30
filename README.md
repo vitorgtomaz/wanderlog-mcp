@@ -232,10 +232,34 @@ The server injects instructions into the MCP `initialize` response that tell the
 
 ## Security
 
+wanderlog-mcp ships two transports with very different trust models. Pick
+the one that matches your deployment, and read the matching subsection.
+
+### Security — local stdio mode (`dist/index.js`, the default)
+
 - The cookie is stored only in your MCP client config, never committed or logged
-- wanderlog-mcp runs entirely on your machine — there's no relay server
+- The Node process runs entirely on your machine; there is no relay server, and
+  no network egress beyond wanderlog.com itself
 - The startup auth probe validates your cookie without printing its value
 - To revoke access: log out of wanderlog.com (invalidates all sessions), then re-capture
+
+### Security — HTTP transport (`dist/http.js`, e.g. fly.io)
+
+- The HTTP server is a **multi-tenant relay**. Every request must carry
+  `Authorization: Bearer <connect.sid>`; the cookie value must never be
+  passed in the URL — it would land in proxy access logs and `Referer`
+  headers
+- Cookies are held in process memory for up to 10 minutes after last use,
+  hashed (SHA-256, truncated) for cache lookup but stored in plaintext for
+  outbound calls to wanderlog.com
+- **Operators are trusted with every active user's cookie.** Deploy only
+  behind TLS, restrict ingress, rotate any cookies you suspect were
+  exposed, and assume that anyone who can read the process memory or the
+  outbound traffic can act as your users on wanderlog.com
+- The server is stateless across restarts; restarting evicts all cached
+  cookies. There is no on-disk credential store
+- Error logs route through `redactSecrets()` before reaching stdout, so
+  cookies and `?token=…` query strings do not surface in fly.io logs
 
 ## Contributing
 
