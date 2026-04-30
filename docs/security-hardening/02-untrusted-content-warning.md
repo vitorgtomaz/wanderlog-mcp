@@ -2,7 +2,7 @@
 
 **Severity:** High
 **Category:** Prompt injection
-**Status:** Todo
+**Status:** Done ✅
 
 ## Problem
 
