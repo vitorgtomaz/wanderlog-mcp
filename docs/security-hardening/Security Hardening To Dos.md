@@ -27,7 +27,7 @@ so early fixes also reduce the surface for later ones (e.g. dropping
 
 ### Low
 
-- [ ] [08 — Extend `secret-leak.test.ts` to WS and HTTP transports](./08-extend-secret-leak-canary.md) — Data leak
+- [x] [08 — Extend `secret-leak.test.ts` to WS and HTTP transports](./08-extend-secret-leak-canary.md) — Data leak
 - [ ] [09 — Quote echoed user input consistently in tool responses](./09-quote-echoed-input.md) — Prompt injection
 - [ ] [10 — Drop raw `place_id` from `wanderlog_search_places` detailed format](./10-drop-raw-place-id.md) — Prompt injection
 

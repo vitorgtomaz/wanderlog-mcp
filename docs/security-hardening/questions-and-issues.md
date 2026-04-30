@@ -57,6 +57,36 @@ that the user may want to review, override, or follow up on.
 - **How to revisit:** `src/formatters/trip-summary.ts` `formatPlaceBlock`
   (the parts after `parts.push(\`${time}…\`)`).
 
+## Item #08 — HTTP suite is a structural source-grep, not a server boot
+
+- **Decision:** `tests/unit/secret-leak-http.test.ts` does not boot
+  Express. Instead it asserts the structural invariant that every
+  `console.error(...)` in `src/http.ts` mentions `redactSecrets` in
+  its argument list, plus a sentinel-string sanity check on the helper.
+- **Why:** Booting Express + the MCP transport in a unit test is heavy
+  and brittle. The contract we want — "the cookie cannot reach stdout
+  via console.error" — decomposes into "(a) every log site goes through
+  redactSecrets, (b) redactSecrets strips the cookie." The HTTP suite
+  enforces (a) by source-grep; the existing `redact-secrets.test.ts`
+  enforces (b). Together they cover the same surface as a full HTTP
+  spy harness.
+- **How to revisit:** `tests/unit/secret-leak-http.test.ts`. If you
+  want a true integration spy, add `supertest` and write one against
+  `handleMcp` (which would also need to be exported).
+
+## Item #08 — WS suite uses a hand-rolled `vi.mock("ws")` double
+
+- **Decision:** Stubbed the `ws` module with a small `EventEmitter`
+  subclass that the test drives directly (emit `unexpected-response`,
+  `error`, etc.). Used `trapRejection()` to attach a then-handler
+  before advancing fake timers, sidestepping Node's
+  unhandled-rejection-until-awaited classification.
+- **Why:** No other test file uses `vi.mock`, so this is a one-off; but
+  the alternative (driving real WebSocket connections) requires a
+  network and would fail offline. The double is ~30 lines and isolated
+  to one test file.
+- **How to revisit:** `tests/unit/secret-leak-ws.test.ts` (`FakeWebSocket`).
+
 ## Item #03 — Test asserts on the helper, not on `console.error` calls
 
 - **Decision:** The unit test verifies `redactSecrets` strips the sentinel
