@@ -34,3 +34,27 @@ describe("SERVER_INSTRUCTIONS — untrusted-content warning (item #02)", () => {
     );
   });
 });
+
+/**
+ * Item #06: SERVER_INSTRUCTIONS must also tell the model to treat PII
+ * fields (confirmation numbers, phone numbers, traveler names) as
+ * answer-internal — i.e. don't quote them back unless the user asked.
+ *
+ * If this paragraph is dropped, an LLM happily quoting confirmation
+ * numbers into chat (where they may be screenshotted, copied, logged by
+ * a third-party provider) becomes the default. The wording asserted on
+ * is a stable substring chosen to make a future drop fail loudly.
+ */
+describe("SERVER_INSTRUCTIONS — PII non-volunteering instruction (item #06)", () => {
+  it("calls out confirmation numbers, phone numbers, and traveler names by name", () => {
+    expect(SERVER_INSTRUCTIONS).toContain("Confirmation numbers");
+    expect(SERVER_INSTRUCTIONS).toContain("phone numbers");
+    expect(SERVER_INSTRUCTIONS).toContain("traveler names");
+  });
+
+  it("instructs the model not to surface them unless the user asked", () => {
+    expect(SERVER_INSTRUCTIONS).toMatch(
+      /should not appear in your reply unless/i,
+    );
+  });
+});
