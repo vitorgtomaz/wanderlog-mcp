@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "author": {
+    "email": "vitorgtomaz@gmail.com",
+    "name": "Vitor Tomaz"
+  },
+  "description": "Consulta privada de viagens do Wanderlog, hospedada em um Cloudflare Worker independente.",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "capabilities": [],
+        "category": "Travel",
+        "defaultPrompt": "Quais viagens tenho no Wanderlog?",
+        "developerName": "Vitor Tomaz",
+        "displayName": "Wanderlog · Cloudflare",
+        "longDescription": "Consulte o status da conexão, liste viagens e leia os detalhes de uma viagem do Wanderlog. Somente leitura, com autenticação OAuth e conexão mantida na nuvem. Use o botão Conectar e informe sua chave de conexão na página segura do Worker.",
+        "shortDescription": "Consulte suas viagens"
+      }
+    }
+  },
+  "name": "wanderlog-cloudflare",
+  "version": "1.1.0"
+}

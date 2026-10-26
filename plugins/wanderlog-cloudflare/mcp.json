@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "wanderlog-cloudflare": {
+      "type": "streamable-http",
+      "url": "https://wanderlog-consulta-privada.vitorgtomaz.workers.dev/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "dcr"
+            },
+            "baseScopes": [
+              "wanderlog:read"
+            ],
+            "defaultScopes": [
+              "wanderlog:read",
+              "offline_access"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
