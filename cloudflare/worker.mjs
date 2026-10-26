@@ -11,7 +11,7 @@ class SafeError extends Error {}
 const json = (value, status = 200, headers = {}) => Response.json(value, { status, headers: { 'Cache-Control': 'no-store', ...headers } });
 const rpcError = (id, code, message, status = 200) => json({ jsonrpc: '2.0', id, error: { code, message } }, status);
 
-async function validToken(provided, expected) {
+export async function validToken(provided, expected) {
   const encoder = new TextEncoder();
   const hashes = await Promise.all([provided, expected].map(s => crypto.subtle.digest('SHA-256', encoder.encode(s))));
   return timingSafeEqual(new Uint8Array(hashes[0]), new Uint8Array(hashes[1]));
@@ -74,16 +74,13 @@ async function callTool(name, args, env) {
   return { tripPlan: data.tripPlan, resources: data.resources ?? {} };
 }
 
-export default {
+export const mcpHandler = {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/health' && request.method === 'GET') return json({ status: 'ok', readOnly: true });
     if (url.pathname !== '/mcp') return json({ error: 'Not found' }, 404);
     // Reject browser cross-origin calls. Server-to-server MCP calls carry no Origin.
     if (request.headers.has('origin') && request.headers.get('origin') !== url.origin) return json({ error: 'Forbidden origin' }, 403);
-    if (!env.MCP_ACCESS_TOKEN) return json({ error: 'Server authentication has not been configured.' }, 503);
-    const bearer = request.headers.get('authorization')?.match(/^Bearer (\S+)$/i)?.[1];
-    if (!bearer || bearer.length > 4096 || !(await validToken(bearer, env.MCP_ACCESS_TOKEN))) return json({ error: 'Unauthorized' }, 401, { 'WWW-Authenticate': 'Bearer realm="wanderlog-mcp"' });
     if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, { Allow: 'POST' });
     if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) return json({ error: 'Expected application/json' }, 415);
     let rpc;
@@ -109,5 +106,17 @@ export default {
       default: return rpcError(id, -32601, 'Method not found.');
     }
     return json({ jsonrpc: '2.0', id, result });
+  },
+};
+
+// Legacy API-key adapter retained for existing local tests; the deployed
+// entrypoint is oauth.mjs, whose API handler runs only after OAuth validation.
+export default {
+  async fetch(request, env) {
+    if (new URL(request.url).pathname !== '/mcp') return mcpHandler.fetch(request, env);
+    if (!env.MCP_ACCESS_TOKEN) return json({ error: 'Server authentication has not been configured.' }, 503);
+    const bearer = request.headers.get('authorization')?.match(/^Bearer (\S+)$/i)?.[1];
+    if (!bearer || bearer.length > 4096 || !(await validToken(bearer, env.MCP_ACCESS_TOKEN))) return json({ error: 'Unauthorized' }, 401);
+    return mcpHandler.fetch(request, env);
   },
 };

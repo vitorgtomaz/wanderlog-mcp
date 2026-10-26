@@ -1,8 +1,10 @@
 {
   "name": "wanderlog-consulta-privada",
-  "main": "worker.mjs",
+  "main": "oauth.mjs",
   "compatibility_date": "2026-10-26",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true, "head_sampling_rate": 0.1 },
+  "observability": { "enabled": true, "head_sampling_rate": 0.1, "redact_query_string": true },
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "d8549725e95b460fae627223347b70eb" }],
+  "ratelimits": [{ "name": "AUTH_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }],
   "secrets": { "required": ["MCP_ACCESS_TOKEN", "WANDERLOG_COOKIE"] }
 }

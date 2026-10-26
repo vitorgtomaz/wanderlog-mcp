@@ -6,7 +6,19 @@
       "url": "https://wanderlog-consulta-privada.vitorgtomaz.workers.dev/mcp",
       "extensions": {
         "com.openai": {
-          "auth": { "type": "api_key", "headerScheme": "bearer" }
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "dcr"
+            },
+            "baseScopes": [
+              "wanderlog:read"
+            ],
+            "defaultScopes": [
+              "wanderlog:read",
+              "offline_access"
+            ]
+          }
         }
       }
     }

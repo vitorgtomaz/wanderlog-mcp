@@ -1,35 +1,26 @@
-# Wanderlog read-only Cloudflare deployment
+# Wanderlog cloud OAuth
 
-Independent Worker and private plugin, without Sites hosting.
+Independent read-only Worker and private plugin; no Sites or local MCP setup required.
 
-Endpoint: https://wanderlog-consulta-privada.vitorgtomaz.workers.dev/mcp
+MCP: https://wanderlog-consulta-privada.vitorgtomaz.workers.dev/mcp
+Plugin: https://chatgpt.com/plugins/plugins_6adf64cf69d48191ae60bf9902aa1629
 
-## Configure secrets
+## Connect
 
-Open Cloudflare → Workers & Pages → `wanderlog-consulta-privada` → Settings → Variables and Secrets. Add both values with type **Secret**, then deploy:
+Update the private Wanderlog · Cloudflare plugin to 1.1.0, select Connect and enter your existing MCP_ACCESS_TOKEN on the Worker consent page. Select Autorizar consulta. Do not enter the Wanderlog cookie on this page. OAuth access and refresh tokens keep the connection in the cloud.
 
-- `WANDERLOG_COOKIE`: log into https://wanderlog.com, open browser DevTools → Application → Cookies → https://wanderlog.com, and copy the `connect.sid` value. Paste only this value, without surrounding quotes. This session grants access to the Wanderlog account; never commit it.
-- `MCP_ACCESS_TOKEN`: generate a random password of at least 32 characters with a password manager. Keep this separate from the Wanderlog session cookie.
+## Server configuration
 
-Install/connect the private `Wanderlog · Cloudflare` plugin and enter the **same `MCP_ACCESS_TOKEN` value** as its API key. Do not enter the Wanderlog cookie in the plugin. The plugin uses Bearer authentication.
+The deployment preserves the WANDERLOG_COOKIE and MCP_ACCESS_TOKEN secrets. OAUTH_KV stores the official Cloudflare OAuth provider's grant state; AUTH_LIMITER limits login attempts. The provider handles discovery, DCR, PKCE S256, code consumption, refresh rotation and revocation. Consent transactions are browser-bound and expire after ten minutes. Only documented ChatGPT cloud redirect paths are accepted. Rotating MCP_ACCESS_TOKEN invalidates existing grants at the MCP handler.
 
-Private plugin: https://chatgpt.com/plugins/plugins_6adf64cf69d48191ae60bf9902aa1629
+The entrypoint is oauth.mjs, wrapping the shared MCP handler. The legacy API-key adapter in worker.mjs is retained for core tests but is not deployed. The owner's key is not accepted as an MCP bearer token in the OAuth deployment.
 
-The plugin package is in `plugins/wanderlog-cloudflare/`. It contains no credentials.
+The three tools check connection status, list trips and read trip snapshots. All upstream operations are GET requests to a fixed Wanderlog origin; snapshots omit view registration and have a 4 MiB payload limit. This is a read-only port, not the upstream server's full tool set.
 
-## Behavior
+## Build and test
 
-- `wanderlog_connection_status`: validates the session with `/api/user`.
-- `wanderlog_list_trips`: validates the session and reads `/api/tripPlans/home`.
-- `wanderlog_get_trip_snapshot`: reads the selected trip, without registering a view.
-- Only upstream GET requests to the fixed `https://wanderlog.com` origin are possible.
-- All MCP requests require `MCP_ACCESS_TOKEN`. Missing configuration fails closed.
-- Credentials and upstream exception text are not returned in tool errors.
-- The public `/health` endpoint reports process health only; it does not validate the session.
-- Snapshot responses are limited to 4 MiB. This is a deliberately small read-only port, not the original server's full tool set.
+From cloudflare/, run npm install then npm test. Keep secrets out of source and preserve their bindings on deployment.
 
-Run tests: `node --test cloudflare/worker.test.mjs`.
-
-On 2026-10-26, the Worker was uploaded through the authenticated Cloudflare connector and `/health` was verified in a browser. The two runtime secrets and the plugin connection still require the owner's input. Live Wanderlog access has not been verified.
+Validation: all six tests passed, including the actual OAuth library and bundled handler with an in-memory KV adapter. Tests cover discovery, redirect rejection, browser-bound consent, wrong passwords, origin checks, PKCE, code replay and grant revocation, refresh, and protected MCP calls. Local workerd verification was unavailable due to environment failures. Production OAuth discovery was verified in a browser. Owner consent and live Wanderlog access are pending.
 
 The older Sites plugin remains unchanged.

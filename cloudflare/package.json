@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild oauth.mjs --bundle --format=esm --platform=neutral --main-fields=module,main --external:cloudflare:workers --external:node:crypto --outfile=dist/worker.mjs",
+    "test": "node --test worker.test.mjs && npm run build && node --test oauth.test.mjs"
+  },
+  "dependencies": {
+    "@cloudflare/workers-oauth-provider": "1.2.4"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "@cloudflare/workers-types": "5.20261026.1"
+  }
+}

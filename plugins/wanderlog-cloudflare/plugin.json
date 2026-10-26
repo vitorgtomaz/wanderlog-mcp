@@ -1,20 +1,23 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "wanderlog-cloudflare",
-  "version": "1.0.0",
+  "author": {
+    "email": "vitorgtomaz@gmail.com",
+    "name": "Vitor Tomaz"
+  },
   "description": "Consulta privada de viagens do Wanderlog, hospedada em um Cloudflare Worker independente.",
-  "author": { "name": "Vitor Tomaz" },
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "Wanderlog · Cloudflare",
-        "shortDescription": "Consulte suas viagens",
-        "longDescription": "Consulte o status da conexão, liste viagens e leia os detalhes de uma viagem do Wanderlog. Somente leitura. Requer configurar WANDERLOG_COOKIE e MCP_ACCESS_TOKEN no Cloudflare Worker e conectar com a mesma chave MCP_ACCESS_TOKEN.",
-        "developerName": "Vitor Tomaz",
-        "category": "Travel",
         "capabilities": [],
-        "defaultPrompt": "Quais viagens tenho no Wanderlog?"
+        "category": "Travel",
+        "defaultPrompt": "Quais viagens tenho no Wanderlog?",
+        "developerName": "Vitor Tomaz",
+        "displayName": "Wanderlog · Cloudflare",
+        "longDescription": "Consulte o status da conexão, liste viagens e leia os detalhes de uma viagem do Wanderlog. Somente leitura, com autenticação OAuth e conexão mantida na nuvem. Use o botão Conectar e informe sua chave de conexão na página segura do Worker.",
+        "shortDescription": "Consulte suas viagens"
       }
     }
-  }
+  },
+  "name": "wanderlog-cloudflare",
+  "version": "1.1.0"
 }
