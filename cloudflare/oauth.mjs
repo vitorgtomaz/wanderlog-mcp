@@ -38,7 +38,9 @@ async function authorize(request, env) {
       const consent = await oauth.beginConsent(auth);
       consent.headers.set('Content-Type', 'text/html; charset=utf-8');
       consent.headers.set('Cache-Control', 'no-store');
-      consent.headers.set('Referrer-Policy', 'no-referrer');
+      // HTML form POSTs can send Origin:null under no-referrer. Keep the
+      // origin on same-origin submissions without leaking the auth URL out.
+      consent.headers.set('Referrer-Policy', 'same-origin');
       consent.headers.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
       return new Response(page(details, consent.handle), { headers: consent.headers });
     }

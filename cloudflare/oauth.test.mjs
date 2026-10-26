@@ -52,6 +52,7 @@ test('OAuth discovery, consent, PKCE, replay rejection, refresh and protected MC
     const params = { response_type: 'code', client_id: client.client_id, redirect_uri: redirect, scope: 'wanderlog:read offline_access', state: 'fixture-state', code_challenge: challenge, code_challenge_method: 'S256', resource: origin + '/mcp' };
     const get = await send('/authorize?' + new URLSearchParams(params));
     assert.equal(get.status, 200);
+    assert.equal(get.headers.get('referrer-policy'), 'same-origin');
     assert.match(get.headers.get('content-security-policy'), /frame-ancestors 'none'/);
     const cookie = get.headers.getSetCookie().map(v => v.split(';')[0]).join('; ');
     const html = await get.text();
